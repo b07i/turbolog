@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garage — Car Maintenance Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f4f0;
+    --bg3: #eceae4;
+    --text: #1a1a18;
+    --text2: #6b6a65;
+    --text3: #9e9d98;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0ede6;
+      --text2: #9e9d98;
+      --text3: #6b6a65;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+    }
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg2);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1 svg { width: 28px; height: 28px; }
+
+  .sub {
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 1.75rem;
+  }
+
+  .tabs {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    width: fit-content;
+    background: var(--bg);
+  }
+
+  .tab {
+    padding: 9px 22px;
+    font-size: 14px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    font-family: var(--font);
+    transition: background .15s, color .15s;
+  }
+
+  .tab.active {
+    background: var(--bg3);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 1rem;
+  }
+
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  @media (max-width: 500px) {
+    .g2, .g3 { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+
+  .field label {
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 500;
+  }
+
+  .field input, .field select {
+    padding: 8px 11px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: var(--font);
+    width: 100%;
+    transition: border-color .15s;
+  }
+
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--border2);
+    background: var(--bg);
+  }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 1.25rem; justify-content: flex-end; }
+
+  .btn {
+    padding: 9px 20px;
+    font-size: 14px;
+    font-family: var(--font);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 500;
+  }
+
+  .btn-p {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+  }
+
+  .btn-p:hover { opacity: .82; }
+
+  .btn-s {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+
+  .btn-s:hover { background: var(--bg2); }
+
+  /* Car card */
+  .car-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .car-hd {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 1.25rem;
+  }
+
+  .car-ico {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .car-ico svg { width: 24px; height: 24px; color: var(--text2); }
+
+  .car-name { font-size: 17px; font-weight: 600; color: var(--text); }
+  .car-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+  .del-btn {
+    margin-left: auto;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--font);
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+
+  .del-btn:hover { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: .75rem;
+    text-align: center;
+  }
+
+  .stat-n { font-size: 22px; font-weight: 600; }
+  .stat-l { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* Maintenance items */
+  .mitem {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: .75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 7px;
+    background: var(--bg2);
+    transition: background .1s;
+  }
+
+  .mitem:hover { background: var(--bg3); }
+
+  .micon { color: var(--text2); flex-shrink: 0; }
+  .micon svg { width: 18px; height: 18px; display: block; }
+
+  .mname { font-size: 13px; font-weight: 500; color: var(--text); }
+  .msub { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+
+  .mright { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+
+  .badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .b-ok   { background: #EAF3DE; color: #3B6D11; }
+  .b-soon { background: #FAEEDA; color: #854F0B; }
+  .b-over { background: #FCEBEB; color: #A32D2D; }
+  .b-unk  { background: var(--bg3); color: var(--text2); }
+
+  .logbtn {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: var(--font);
+    transition: all .15s;
+  }
+
+  .logbtn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .pbar { height: 3px; background: var(--bg3); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .pfill { height: 100%; border-radius: 2px; }
+
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  .empty svg { width: 40px; height: 40px; opacity: .3; margin: 0 auto 12px; display: block; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    width: min(400px, 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  }
+
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+  .modal .field { margin-bottom: 12px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--text);
+    color: var(--bg);
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity .25s;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .toast.show { opacity: 1; }
+
+  /* Update mileage inline */
+  .update-km {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    font-family: var(--font);
+    margin-left: 6px;
+  }
+
+  .update-km:hover { border-color: var(--border2); color: var(--text2); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1"/>
+      <rect x="9" y="11" width="14" height="10" rx="2"/>
+      <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M5 9l2-4h6l2 4"/>
+    </svg>
+    TurboLog
+  </h1>
+  <p class="sub">Track maintenance for all your vehicles — data saved locally in your browser.</p>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-my" onclick="switchTab('my')">My Cars</button>
+    <button class="tab" id="tab-add" onclick="switchTab('add')">+ Add Car</button>
+  </div>
+
+  <div class="pane active" id="pane-my">
+    <div id="garage"></div>
+  </div>
+
+  <div class="pane" id="pane-add">
+    <div class="card">
+      <div class="card-title">Vehicle info</div>
+      <div class="g3">
+        <div class="field"><label>Year</label><input id="f-year" type="number" placeholder="2020" min="1960" max="2030"></div>
+        <div class="field"><label>Make</label><input id="f-make" type="text" placeholder="Toyota"></div>
+        <div class="field"><label>Model</label><input id="f-model" type="text" placeholder="Camry"></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Trim / Variant</label><input id="f-trim" type="text" placeholder="SE, Sport, Executive..."></div>
+        <div class="field"><label>Color</label><input id="f-color" type="text" placeholder="Silver"></div>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Fuel type</label>
+          <select id="f-fuel">
+            <option value="">Select...</option>
+            <option>Gasoline</option><option>Diesel</option><option>Hybrid</option>
+            <option>Plug-in Hybrid</option><option>Electric</option><option>LPG</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Transmission</label>
+          <select id="f-trans">
+            <option value="">Select...</option>
+            <option>Automatic</option><option>Manual</option><option>CVT</option><option>DCT</option>
+          </select>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Engine</label><input id="f-engine" type="text" placeholder="2.0L, 1.4T, 150hp..."></div>
+        <div class="field"><label>Current mileage (km)</label><input id="f-mileage" type="number" placeholder="45000"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">License &amp; purchase</div>
+      <div class="g2">
+        <div class="field"><label>License plate</label><input id="f-plate" type="text" placeholder="AB 12 CDE"></div>
+        <div class="field"><label>VIN (optional)</label><input id="f-vin" type="text" placeholder="1HGCM82633A..."></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Purchase date</label><input id="f-purchase" type="date"></div>
+        <div class="field"><label>Nickname (optional)</label><input id="f-nick" type="text" placeholder="The Beast, Daily, Old Faithful..."></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="switchTab('my')">Cancel</button>
+      <button class="btn btn-p" onclick="addCar()">Save car &amp; set up maintenance →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log service modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="m-title">Log service</h3>
+    <div class="field"><label>Service date</label><input id="m-date" type="date"></div>
+    <div class="field"><label>Mileage at service (km)</label><input id="m-km" type="number" placeholder="44200"></div>
+    <div class="field"><label>Notes (optional)</label><input id="m-notes" type="text" placeholder="Shop name, part brand, details..."></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveLog()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update mileage modal -->
+<div class="overlay" id="km-overlay">
+  <div class="modal">
+    <h3>Update mileage</h3>
+    <div class="field"><label>Current mileage (km)</label><input id="km-input" type="number" placeholder="50000"></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="closeKmModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveKm()">Update</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var STORAGE_KEY = 'garage-tracker-v1';
+var cars = [];
+var logs = {};
+var uid = Date.now();
+var editing = { ci: null, itemId: null };
+var editingKm = null;
+
+var ITEMS = [
+  { id: 'oil',       name: 'Engine oil & filter',        km: 10000,  days: 365  },
+  { id: 'tyre-rot',  name: 'Tyre rotation',              km: 10000,  days: null },
+  { id: 'brake-fl',  name: 'Brake fluid',                km: null,   days: 730  },
+  { id: 'air-filt',  name: 'Air filter',                 km: 25000,  days: 730  },
+  { id: 'cabin',     name: 'Cabin air filter',           km: 20000,  days: 365  },
+  { id: 'sparks',    name: 'Spark plugs',                km: 40000,  days: null },
+  { id: 'coolant',   name: 'Coolant flush',              km: null,   days: 1825 },
+  { id: 'trans-fl',  name: 'Transmission fluid',         km: 60000,  days: null },
+  { id: 'brakes',    name: 'Brake pads check',           km: 20000,  days: 365  },
+  { id: 'tyres',     name: 'Tyre replacement',           km: 50000,  days: null },
+  { id: 'battery',   name: 'Battery check',              km: null,   days: 730  },
+  { id: 'timing',    name: 'Timing belt / chain',        km: 100000, days: null },
+  { id: 'wipers',    name: 'Wiper blades',               km: null,   days: 365  },
+  { id: 'ac',        name: 'A/C service',                km: null,   days: 730  },
+  { id: 'fuel-filt', name: 'Fuel filter',                km: 40000,  days: null },
+  { id: 'diff',      name: 'Differential fluid',         km: 80000,  days: null },
+  { id: 'ps-fl',     name: 'Power steering fluid',       km: null,   days: 1825 },
+  { id: 'align',     name: 'Wheel alignment',            km: 20000,  days: null },
+  { id: 'susp',      name: 'Suspension / shocks check',  km: 50000,  days: null },
+  { id: 'inspect',   name: 'General inspection (ITP)',   km: null,   days: 365  },
+];
+
+// Icons as inline SVG paths
+var ICONS = {
+  'oil':       '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32 2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M18.66 5.34l2.12-2.12"/>',
+  'tyre-rot':  '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+  'brake-fl':  '<path d="M12 22a8 8 0 0 0 8-8c0-4-2-8-8-14C6 8 4 12 4 14a8 8 0 0 0 8 8z"/>',
+  'air-filt':  '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M8 12h8m-8-4h8m-8 8h8"/>',
+  'cabin':     '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  'sparks':    '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  'coolant':   '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>',
+  'trans-fl':  '<path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/>',
+  'brakes':    '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>',
+  'tyres':     '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/>',
+  'battery':   '<rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 11v2m4-2v2"/>',
+  'timing':    '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'wipers':    '<path d="M12 12L4.93 19.07A10 10 0 0 1 19.07 4.93"/><path d="M12 12 4.93 4.93A10 10 0 0 0 19.07 19.07"/>',
+  'ac':        '<path d="M8 24V7m8 17V7M12 2v5m0 10v5M4.22 9.22l3.54 3.54m8.48-3.54-3.54 3.54M2 12h5m10 0h5M4.22 14.78l3.54-3.54m8.48 3.54-3.54-3.54"/>',
+  'fuel-filt': '<path d="M3 22V3h12v19"/><path d="M19 10h.01M3 10h12"/><path d="M15 10v3a4 4 0 0 0 4 4h.5"/>',
+  'diff':      '<circle cx="5" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>',
+  'ps-fl':     '<circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  'align':     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  'susp':      '<path d="M16 16s-1.5-2-4-2-4 2-4 2"/><path d="M12 20V4"/><path d="M8 8l4-4 4 4"/>',
+  'inspect':   '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+};
+
+function icon(id) {
+  var d = ICONS[id] || ICONS['inspect'];
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+}
+
+function carIcon() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M5 9l2-4h6l2 4"/></svg>';
+}
+
+// Persistence
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cars: cars, logs: logs, uid: uid }));
+  } catch(e) {
+    showToast('Warning: could not save data.');
+  }
+}
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var d = JSON.parse(raw);
+      cars = d.cars || [];
+      logs = d.logs || {};
+      uid  = d.uid  || Date.now();
+    }
+  } catch(e) {}
+  renderGarage();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2200);
+}
+
+function switchTab(t) {
+  document.getElementById('tab-my').classList.toggle('active', t === 'my');
+  document.getElementById('tab-add').classList.toggle('active', t === 'add');
+  document.getElementById('pane-my').classList.toggle('active', t === 'my');
+  document.getElementById('pane-add').classList.toggle('active', t === 'add');
+  if (t === 'my') renderGarage();
+}
+
+function addCar() {
+  var year  = document.getElementById('f-year').value;
+  var make  = document.getElementById('f-make').value.trim();
+  var model = document.getElementById('f-model').value.trim();
+  if (!year || !make || !model) {
+    alert('Please fill in at least Year, Make and Model.');
+    return;
+  }
+  var car = {
+    id:       uid++,
+    year:     year,
+    make:     make,
+    model:    model,
+    trim:     document.getElementById('f-trim').value.trim(),
+    color:    document.getElementById('f-color').value.trim(),
+    fuel:     document.getElementById('f-fuel').value,
+    trans:    document.getElementById('f-trans').value,
+    engine:   document.getElementById('f-engine').value.trim(),
+    mileage:  parseInt(document.getElementById('f-mileage').value) || 0,
+    plate:    document.getElementById('f-plate').value.trim(),
+    vin:      document.getElementById('f-vin').value.trim(),
+    purchase: document.getElementById('f-purchase').value,
+    nick:     document.getElementById('f-nick').value.trim(),
+  };
+  cars.push(car);
+  logs[car.id] = {};
+  persist();
+  // Clear form
+  ['f-year','f-make','f-model','f-trim','f-color','f-engine','f-mileage','f-plate','f-vin','f-nick']
+    .forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('f-fuel').value = '';
+  document.getElementById('f-trans').value = '';
+  document.getElementById('f-purchase').value = '';
+  showToast('Car saved! ✓');
+  switchTab('my');
+}
+
+function getStatus(ci, item) {
+  var car = cars[ci];
+  var log = (logs[car.id] || {})[item.id];
+  if (!log) return { label: 'Not logged', cls: 'b-unk', pct: 0 };
+  var now     = Date.now();
+  var logDate = new Date(log.date).getTime();
+  var worst   = 0;
+  if (item.days) {
+    worst = Math.max(worst, ((now - logDate) / 86400000) / item.days);
+  }
+  if (item.km && log.km) {
+    worst = Math.max(worst, (car.mileage - parseInt(log.km)) / item.km);
+  }
+  if (!item.days && !item.km) return { label: 'Logged', cls: 'b-ok', pct: 0 };
+  worst = Math.min(worst, 1);
+  if (worst >= 1)    return { label: 'Overdue',  cls: 'b-over', pct: worst };
+  if (worst >= 0.75) return { label: 'Due soon', cls: 'b-soon', pct: worst };
+  return { label: 'OK', cls: 'b-ok', pct: worst };
+}
+
+function renderGarage() {
+  var el = document.getElementById('garage');
+  if (!cars.length) {
+    el.innerHTML = '<div class="empty">' + carIcon() + 'No cars yet — click "+ Add Car" to get started.</div>';
+    return;
+  }
+  var html = '';
+  for (var ci = 0; ci < cars.length; ci++) {
+    var car     = cars[ci];
+    var carLogs = logs[car.id] || {};
+    var overdue = 0, soon = 0, logged = Object.keys(carLogs).length;
+    for (var i = 0; i < ITEMS.length; i++) {
+      var st = getStatus(ci, ITEMS[i]);
+      if (st.label === 'Overdue')  overdue++;
+      else if (st.label === 'Due soon') soon++;
+    }
+    var displayName = car.nick || (car.year + ' ' + car.make + ' ' + car.model);
+    var meta = [car.fuel, car.engine, car.trans, car.plate].filter(Boolean).join(' · ');
+
+    html += '<div class="car-card">';
+    html += '<div class="car-hd">';
+    html += '<div class="car-ico">' + carIcon() + '</div>';
+    html += '<div>';
+    html += '<div class="car-name">' + esc(displayName) + '</div>';
+    html += '<div class="car-meta">' + esc(meta);
+    if (car.mileage) html += (meta ? ' · ' : '') + parseInt(car.mileage).toLocaleString() + ' km';
+    html += ' <button class="update-km" onclick="openKmModal(' + ci + ')">update km</button></div>';
+    html += '</div>';
+    html += '<button class="del-btn" onclick="deleteCar(' + ci + ')">✕ Remove</button>';
+    html += '</div>';
+
+    html += '<div class="stats">';
+    html += '<div class="stat"><div class="stat-n" style="color:' + (overdue ? '#A32D2D' : 'var(--text)') + '">' + overdue + '</div><div class="stat-l">Overdue</div></div>';
+    html += '<div class="stat"><div class="stat-n" style="color:' + (soon ? '#854F0B' : 'var(--text)') + '">' + soon + '</div><div class="stat-l">Due soon</div></div>';
+    html += '<div class="stat"><div class="stat-n">' + logged + '/' + ITEMS.length + '</div><div class="stat-l">Logged</div></div>';
+    html += '</div>';
+
+    for (var j = 0; j < ITEMS.length; j++) {
+      var item    = ITEMS[j];
+      var log     = carLogs[item.id];
+      var st2     = getStatus(ci, item);
+      var intStr  = item.km ? 'Every ' + item.km.toLocaleString() + ' km' : item.days ? 'Every ' + Math.round(item.days / 30) + ' months' : '';
+      var lastStr = log
+        ? ('Last: ' + log.date + (log.km ? ' @ ' + parseInt(log.km).toLocaleString() + ' km' : '') + (log.notes ? ' · ' + esc(log.notes) : ''))
+        : intStr;
+      var barColor = st2.cls === 'b-over' ? '#E24B4A' : st2.cls === 'b-soon' ? '#EF9F27' : '#639922';
+      var pctW     = Math.round(st2.pct * 100);
+
+      html += '<div class="mitem">';
+      html += '<div class="micon">' + icon(item.id) + '</div>';
+      html += '<div>';
+      html += '<div class="mname">' + item.name + '</div>';
+      html += '<div class="msub">' + lastStr + '</div>';
+      if (pctW > 0) html += '<div class="pbar"><div class="pfill" style="width:' + pctW + '%;background:' + barColor + '"></div></div>';
+      html += '</div>';
+      html += '<div class="mright">';
+      html += '<span class="badge ' + st2.cls + '">' + st2.label + '</span>';
+      html += '<button class="logbtn" onclick="openModal(' + ci + ',\'' + item.id + '\')">Log service</button>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openModal(ci, itemId) {
+  editing.ci     = ci;
+  editing.itemId = itemId;
+  var item = null;
+  for (var i = 0; i < ITEMS.length; i++) { if (ITEMS[i].id === itemId) { item = ITEMS[i]; break; } }
+  var log  = (logs[cars[ci].id] || {})[itemId] || {};
+  document.getElementById('m-title').textContent = 'Log: ' + item.name;
+  document.getElementById('m-date').value  = log.date  || new Date().toISOString().split('T')[0];
+  document.getElementById('m-km').value    = log.km    || cars[ci].mileage || '';
+  document.getElementById('m-notes').value = log.notes || '';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+function saveLog() {
+  var ci     = editing.ci;
+  var itemId = editing.itemId;
+  var carId  = cars[ci].id;
+  if (!logs[carId]) logs[carId] = {};
+  logs[carId][itemId] = {
+    date:  document.getElementById('m-date').value,
+    km:    document.getElementById('m-km').value,
+    notes: document.getElementById('m-notes').value.trim(),
+  };
+  persist();
+  showToast('Service logged! ✓');
+  closeModal();
+  renderGarage();
+}
+
+function deleteCar(ci) {
+  var car = cars[ci];
+  if (!confirm('Remove ' + (car.nick || car.year + ' ' + car.make + ' ' + car.model) + ' from your garage?')) return;
+  delete logs[car.id];
+  cars.splice(ci, 1);
+  persist();
+  showToast('Car removed.');
+  renderGarage();
+}
+
+function openKmModal(ci) {
+  editingKm = ci;
+  document.getElementById('km-input').value = cars[ci].mileage || '';
+  document.getElementById('km-overlay').classList.add('open');
+}
+
+function closeKmModal() { document.getElementById('km-overlay').classList.remove('open'); }
+
+function saveKm() {
+  var km = parseInt(document.getElementById('km-input').value);
+  if (!km || km < 0) { alert('Please enter a valid mileage.'); return; }
+  cars[editingKm].mileage = km;
+  persist();
+  showToast('Mileage updated! ✓');
+  closeKmModal();
+  renderGarage();
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('km-overlay').addEventListener('click', function(e) { if (e.target === this) closeKmModal(); });
+
+loadData();
+</script>
+</body>
+</html>
